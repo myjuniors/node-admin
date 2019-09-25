@@ -2,6 +2,7 @@
 const Router = require('koa-router')
 const Users = require('../model/user')
 const Categorys = require('../model/category')
+const Roles = require('../model/role')
 const router = new Router()
  
 router.post('/login', async (ctx) => {
@@ -48,9 +49,9 @@ router.post('/login', async (ctx) => {
   }
 }).post('/addCategory', async (ctx) => {
   const postData = ctx.request.body
-  if (postData && postData.parentId && postData.categoryName) {
+  if (postData && postData.categoryId && postData.categoryName) {
     let result;
-    const category = await Categorys.findOne({ parentId: postData.parentId, categoryName: postData.categoryName})
+    const category = await Categorys.findOne({ parentId: postData.categoryId, categoryName: postData.categoryName})
     console.log(category)
     if (category && category.id) {
       result = {
@@ -59,7 +60,7 @@ router.post('/login', async (ctx) => {
       }
     } else {
       const category = new Categorys({
-        parentId: postData.parentId,
+        parentId: postData.categoryId,
         name: postData.categoryName
       })
       category.save()
@@ -72,9 +73,9 @@ router.post('/login', async (ctx) => {
   }
 }).post('/updateCategory', async (ctx) => {
   const postData = ctx.request.body
-  if (postData && postData.parentId && postData.categoryName) {
+  if (postData && postData.categoryId && postData.categoryName) {
     let result
-    const res = await Categorys.updateOne({ parentId: postData.parentId}, { name: postData.categoryName})
+    const res = await Categorys.updateOne({ _id: postData.categoryId}, { name: postData.categoryName})
     if (res && res.n) {
       result = {
         resultCode: 0,
@@ -100,11 +101,71 @@ router.post('/login', async (ctx) => {
     }
   } else {
     result = {
-      resultCode: -1,
-      message: '还没有分类，请手动添加'
+      resultCode: 0,
+      message: '成功',
+      data: []
     }
   }
   ctx.body = result
+}).post('/addRole', async (ctx) => {
+  const postData = ctx.request.body
+  if (postData && postData.roleName) {
+    let result
+    const role = await Roles.create({
+      name: postData.roleName,
+      menus: []
+    })
+    if (role && role.id) {
+      result = {
+        resultCode: 0,
+        message: '成功', 
+        data: role
+      }
+    } else {
+      result = {
+        resultCode: -1,
+        message: '添加失败了'
+      }
+    }
+    ctx.body = result
+  }
+}).get('/getRoles', async (ctx) => {
+  let result
+  const roles = await Roles.find({})
+  if (roles.length) {
+    result = {
+      resultCode: 0,
+      message: '成功', 
+      data: roles
+    }
+  } else {
+    result = {
+      resultCode: -1,
+      message: '获取角色列表失败'
+    }
+  }
+  ctx.body = result
+}).post('/setPremission', async (ctx) => {
+  const postData = ctx.request.body
+  if (postData && postData.name && postData.authName) {
+    let result
+    const res = await Roles.updateOne({name: postData.name}, {
+      authName: postData.authName,
+      menus: postData.menus
+    })
+    if (res&& res.n) {
+      result = {
+        resultCode: 0,
+        message: '成功'
+      }
+    } else {
+      result = {
+        resultCode: -1,
+        message: '修改失败'
+      }
+    }
+    ctx.body = result
+  }
 })
 
 module.exports = router
