@@ -45,7 +45,7 @@ router.post('/login', async (ctx) => {
     } else {
       result = {
         resultCode: -1,
-        message: '你还没有账号，请前往注册'
+        message: '用户名或者密码错误'
       }
     }
     console.log(result)
