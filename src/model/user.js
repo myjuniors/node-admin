@@ -14,6 +14,15 @@ const userSchema = new Schema({
     type: Number,
     required: true
   },
+  phone: {
+    type: String
+  },
+  email: {
+    type: String
+  },
+  role_id: {
+    type: String
+  },
   meta: {
     createTime: {
       type: Date,

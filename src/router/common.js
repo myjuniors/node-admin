@@ -8,19 +8,47 @@ const router = new Router()
 router.post('/login', async (ctx) => {
   const postData = ctx.request.body
   if (postData && postData.username && postData.password) {
+    let result;
     const user = await Users.findOne({username: postData.username, password: postData.password})
     if (user && user.id) {
-      result = {
-        resultCode: 0,
-        message: '成功',
-        data: user
+      if (user.username === '会飞的鱼') {
+        result = {
+          resultCode: 0,
+          message: '成功', 
+          data: user
+        }
+      } else {
+        const role = await Roles.findOne({_id: user.role_id})
+        const userInfo = {
+          _id: user._id,
+          username: user.username,
+          password: user.password,
+          email: user.email,
+          password: user.password,
+          role_id: user.role_id,
+          role
+        }
+        if (role && role.id) {
+          result = {
+            resultCode: 0,
+            message: '成功',
+            data: userInfo
+          }
+        } else {
+          result = {
+            resultCode: -1,
+            message: '用户名或者密码错误', 
+            data: null
+          }
+        }
       }
     } else {
       result = {
         resultCode: -1,
-        message: '用户名或者密码错误'
+        message: '你还没有账号，请前往注册'
       }
     }
+    console.log(result)
     ctx.body = result      
   }
 }).post('/registry', async (ctx) => {
@@ -162,6 +190,92 @@ router.post('/login', async (ctx) => {
       result = {
         resultCode: -1,
         message: '修改失败'
+      }
+    }
+    ctx.body = result
+  }
+}).get('/getUserList', async (ctx) => {
+  let result
+  const users = await Users.find({username: {$ne: '会飞的鱼'}})
+  const roles = await Roles.find({})
+  if (roles.length) {
+    result = {
+      resultCode: 0,
+      message: '成功', 
+      data: {
+        users,
+        roles
+      }
+    }
+  } else {
+    result = {
+      resultCode: -1,
+      message: '获取角色列表失败'
+    }
+  }
+  ctx.body = result
+}).post('/addUser', async (ctx) => {
+  const postData = ctx.request.body
+  if (postData && postData.username) {
+    let result
+    const userData = await Users.findOne({role_id: postData.role_id})
+    console.log(userData)
+    if (userData && userData._id) {
+      const res = await Users.updateOne({role_id: userData.role_id}, {
+        username: postData.username, 
+        password: postData.password,
+        email: postData.email,
+        phone: postData.phone,
+        role_id: postData.role_id
+      })
+      if (res && res.n) {
+        result = {
+          resultCode: 0,
+          message: '成功'
+        }
+      } else {
+        result = {
+          resultCode: -1,
+          message: '修改失败了'
+        }
+      }
+    } else {
+      const user = await Users.create({
+        username: postData.username, 
+        password: postData.password,
+        email: postData.email,
+        phone: postData.phone,
+        role_id: postData.role_id
+      })
+      if (user && user.id) {
+        result = {
+          resultCode: 0,
+          message: '成功', 
+          data: user
+        }
+      } else {
+        result = {
+          resultCode: -1,
+          message: '添加失败了'
+        }
+      }
+    }
+    ctx.body = result
+  }
+}).post('/removeUser', async (ctx) => {
+  const postData = ctx.request.body
+  if (postData && postData.username) {
+    let result
+    const res = await Users.remove({role_id: postData.role_id})
+    if (res && res.n) {
+      result = {
+        resultCode: 0,
+        message: '成功'
+      }
+    } else {
+      result = {
+        resultCode: -1,
+        message: '删除用户失败'
       }
     }
     ctx.body = result
